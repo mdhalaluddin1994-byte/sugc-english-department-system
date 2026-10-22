@@ -528,3 +528,563 @@
     </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Management System - Department of English</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      #printable-area, #printable-area * { visibility: visible; }
+      #printable-area { position: absolute; left: 0; top: 0; width: 100%; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-indigo-900 text-white shadow-lg no-print">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-indigo-700 p-3 rounded-full">
+          <i class="fa-solid fa-graduation-cap text-3xl text-yellow-400"></i>
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold tracking-wide">Sunamganj Govt. College</h1>
+          <p class="text-indigo-200 text-sm"><i class="fa-solid fa-book-open mr-1"></i>Department of English — Honors Management System</p>
+        </div>
+      </div>
+      
+      <!-- Session Selector & Auth Status -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center bg-indigo-800 px-3 py-1.5 rounded-lg border border-indigo-700">
+          <i class="fa-solid fa-calendar-days text-yellow-400 mr-2"></i>
+          <span class="text-xs text-indigo-200 mr-2">Session:</span>
+          <select id="sessionFilter" onchange="filterData()" class="bg-indigo-900 text-white text-sm focus:outline-none cursor-pointer">
+            <option value="2025-2026">2025-2026</option>
+            <option value="2024-2025">2024-2025</option>
+            <option value="2023-2024">2023-2024</option>
+          </select>
+          <button onclick="addNewSession()" class="ml-2 text-yellow-400 hover:text-yellow-300" title="Add New Session">
+            <i class="fa-solid fa-square-plus text-lg"></i>
+          </button>
+        </div>
+
+        <div id="authStatus" class="flex items-center gap-2">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full no-print">
+
+    <!-- Top Action Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+        <div class="p-3 bg-blue-100 text-blue-600 rounded-lg"><i class="fa-solid fa-users text-2xl"></i></div>
+        <div>
+          <p class="text-xs text-slate-500 uppercase font-semibold">Total Students</p>
+          <h3 id="statTotal" class="text-2xl font-bold text-slate-800">0</h3>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+        <div class="p-3 bg-emerald-100 text-emerald-600 rounded-lg"><i class="fa-solid fa-user-check text-2xl"></i></div>
+        <div>
+          <p class="text-xs text-slate-500 uppercase font-semibold">Collegiate (≥60%)</p>
+          <h3 id="statCollegiate" class="text-2xl font-bold text-emerald-600">0</h3>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+        <div class="p-3 bg-rose-100 text-rose-600 rounded-lg"><i class="fa-solid fa-user-xmark text-2xl"></i></div>
+        <div>
+          <p class="text-xs text-slate-500 uppercase font-semibold">Non-Collegiate (&lt;60%)</p>
+          <h3 id="statNonCollegiate" class="text-2xl font-bold text-rose-600">0</h3>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+        <div class="p-3 bg-amber-100 text-amber-600 rounded-lg"><i class="fa-solid fa-signature text-2xl"></i></div>
+        <div>
+          <p class="text-xs text-slate-500 uppercase font-semibold">Teacher's Sign</p>
+          <button onclick="openSignatureModal()" class="text-xs bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-3 rounded mt-1 flex items-center gap-1">
+            <i class="fa-solid fa-pen-nib"></i> Manage Sign
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <!-- Search -->
+      <div class="relative w-full md:w-80">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="searchInput" oninput="filterData()" placeholder="Search Name, Roll, or Reg..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+        <button id="addStudentBtn" onclick="openStudentModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition">
+          <i class="fa-solid fa-user-plus"></i> Add Student
+        </button>
+        <button onclick="triggerCSVImport()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition">
+          <i class="fa-solid fa-file-import"></i> Import CSV
+        </button>
+        <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
+        <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition">
+          <i class="fa-solid fa-file-excel"></i> Export CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Student Data Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+              <th class="p-3"><i class="fa-solid fa-hashtag mr-1"></i> Roll</th>
+              <th class="p-3"><i class="fa-solid fa-id-card mr-1"></i> Reg No</th>
+              <th class="p-3"><i class="fa-solid fa-user mr-1"></i> Name</th>
+              <th class="p-3"><i class="fa-solid fa-pen mr-1"></i> In-course (10)</th>
+              <th class="p-3"><i class="fa-solid fa-file-lines mr-1"></i> Assign (5)</th>
+              <th class="p-3"><i class="fa-solid fa-clipboard-user mr-1"></i> Attend %</th>
+              <th class="p-3"><i class="fa-solid fa-percent mr-1"></i> Attend (5)</th>
+              <th class="p-3"><i class="fa-solid fa-calculator mr-1"></i> Total (20)</th>
+              <th class="p-3"><i class="fa-solid fa-shield-halved mr-1"></i> Status</th>
+              <th class="p-3 text-center"><i class="fa-solid fa-gear mr-1"></i> Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studentTableBody">
+            <!-- Data Rows inserted via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Printable Area for Cards -->
+  <div id="printable-area" class="hidden p-6 bg-white"></div>
+
+  <!-- Student Add/Edit Modal -->
+  <div id="studentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
+      <h3 id="modalTitle" class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-user-pen text-indigo-600"></i> Student Information
+      </h3>
+      <form id="studentForm" onsubmit="saveStudent(event)" class="space-y-3">
+        <input type="hidden" id="studentIndex">
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">Session</label>
+          <input type="text" id="modalSession" readonly class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-100">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">Student Name</label>
+          <input type="text" id="modalName" required class="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">Class Roll</label>
+            <input type="text" id="modalRoll" required class="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">Registration No</label>
+            <input type="text" id="modalReg" required class="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">In-course I (10)</label>
+            <input type="number" step="0.1" min="0" max="10" id="modalInc1" required class="w-full border border-slate-300 rounded p-2 text-sm">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">In-course II (10)</label>
+            <input type="number" step="0.1" min="0" max="10" id="modalInc2" required class="w-full border border-slate-300 rounded p-2 text-sm">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">Assignment (5)</label>
+            <input type="number" step="0.1" min="0" max="5" id="modalAssign" required class="w-full border border-slate-300 rounded p-2 text-sm">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">Attendance %</label>
+            <input type="number" step="0.1" min="0" max="100" id="modalAttendPct" required class="w-full border border-slate-300 rounded p-2 text-sm">
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-200">
+          <button type="button" onclick="closeStudentModal()" class="px-4 py-2 text-sm bg-slate-200 hover:bg-slate-300 rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium">Save Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Signature Modal -->
+  <div id="signatureModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+      <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-signature text-indigo-600"></i> Upload Teacher's Signature
+      </h3>
+      <div class="space-y-4">
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">Upload Signature Image (PNG/JPG)</label>
+          <input type="file" id="signFileInput" accept="image/*" onchange="previewSignature(event)" class="w-full text-sm text-slate-500 border border-slate-300 rounded p-2">
+        </div>
+        <div class="text-center p-3 bg-slate-50 border border-dashed border-slate-300 rounded-lg">
+          <p class="text-xs text-slate-400 mb-2">Signature Preview</p>
+          <img id="signPreview" class="h-16 mx-auto object-contain hidden" alt="Signature">
+          <span id="noSignText" class="text-xs text-slate-400">No signature added yet</span>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-4 border-t border-slate-200 mt-4">
+        <button onclick="clearSignature()" class="px-3 py-1.5 text-xs bg-rose-100 text-rose-600 rounded">Remove</button>
+        <button onclick="closeSignatureModal()" class="px-4 py-1.5 text-xs bg-indigo-600 text-white rounded font-medium">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // State Management
+    let students = JSON.parse(localStorage.getItem('sugc_english_students')) || [
+      { session: '2025-2026', name: 'Rahim Ahmed', roll: '101', reg: '2025001101', inc1: 8, inc2: 9, assign: 4.5, attendPct: 85 },
+      { session: '2025-2026', name: 'Karima Akter', roll: '102', reg: '2025001102', inc1: 5, inc2: 6, assign: 3, attendPct: 55 }
+    ];
+    let sessions = JSON.parse(localStorage.getItem('sugc_english_sessions')) || ['2025-2026', '2024-2025', '2023-2024'];
+    let teacherSignature = localStorage.getItem('sugc_teacher_sign') || null;
+    let isLoggedIn = localStorage.getItem('sugc_logged_in') === 'true';
+
+    // Init Page
+    window.onload = function() {
+      renderSessionOptions();
+      renderAuthStatus();
+      filterData();
+    };
+
+    function renderAuthStatus() {
+      const container = document.getElementById('authStatus');
+      if (isLoggedIn) {
+        container.innerHTML = `
+          <span class="text-xs text-emerald-300 bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-800"><i class="fa-solid fa-lock-open mr-1"></i> Teacher Mode</span>
+          <button onclick="logout()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        `;
+      } else {
+        container.innerHTML = `
+          <button onclick="login()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition"><i class="fa-solid fa-lock mr-1"></i> Teacher Login</button>
+        `;
+      }
+      document.getElementById('addStudentBtn').style.display = isLoggedIn ? 'inline-flex' : 'none';
+    }
+
+    function login() {
+      const pass = prompt('Enter Teacher Access Password:');
+      if (pass === 'sugc123') {
+        isLoggedIn = true;
+        localStorage.setItem('sugc_logged_in', 'true');
+        renderAuthStatus();
+        filterData();
+      } else if(pass !== null) {
+        alert('Incorrect Password!');
+      }
+    }
+
+    function logout() {
+      isLoggedIn = false;
+      localStorage.setItem('sugc_logged_in', 'false');
+      renderAuthStatus();
+      filterData();
+    }
+
+    function renderSessionOptions() {
+      const select = document.getElementById('sessionFilter');
+      select.innerHTML = sessions.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    function addNewSession() {
+      if (!isLoggedIn) return alert('Please login as teacher first!');
+      const newSess = prompt('Enter New Academic Session (e.g., 2026-2027):');
+      if (newSess && !sessions.includes(newSess)) {
+        sessions.push(newSess);
+        localStorage.setItem('sugc_english_sessions', JSON.stringify(sessions));
+        renderSessionOptions();
+        document.getElementById('sessionFilter').value = newSess;
+        filterData();
+      }
+    }
+
+    // Calculation logic
+    function calcMarks(inc1, inc2, assign, attendPct) {
+      const incAvg = (parseFloat(inc1) + parseFloat(inc2)) / 2;
+      let attendMarks = 0;
+      const pct = parseFloat(attendPct);
+      if (pct >= 90) attendMarks = 5;
+      else if (pct >= 80) attendMarks = 4;
+      else if (pct >= 70) attendMarks = 3;
+      else if (pct >= 60) attendMarks = 2;
+
+      const total = incAvg + parseFloat(assign) + attendMarks;
+      const isCollegiate = pct >= 60;
+      return { incAvg, attendMarks, total, isCollegiate };
+    }
+
+    // Render Table Data
+    function filterData() {
+      const selectedSession = document.getElementById('sessionFilter').value;
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const tbody = document.getElementById('studentTableBody');
+      tbody.innerHTML = '';
+
+      let totalCount = 0, collegiateCount = 0, nonCollegiateCount = 0;
+
+      const filtered = students.filter(s => {
+        const matchesSession = s.session === selectedSession;
+        const matchesQuery = s.name.toLowerCase().includes(query) || s.roll.includes(query) || s.reg.includes(query);
+        return matchesSession && matchesQuery;
+      });
+
+      filtered.forEach((s, idx) => {
+        totalCount++;
+        const calc = calcMarks(s.inc1, s.inc2, s.assign, s.attendPct);
+        if (calc.isCollegiate) collegiateCount++; else nonCollegiateCount++;
+
+        const tr = document.createElement('tr');
+        tr.className = "border-b border-slate-100 hover:bg-slate-50 transition";
+        tr.innerHTML = `
+          <td class="p-3 font-semibold text-slate-700">${s.roll}</td>
+          <td class="p-3 text-slate-600">${s.reg}</td>
+          <td class="p-3 font-medium text-slate-800">${s.name}</td>
+          <td class="p-3 text-slate-600">${((parseFloat(s.inc1)+parseFloat(s.inc2))/2).toFixed(1)}</td>
+          <td class="p-3 text-slate-600">${s.assign}</td>
+          <td class="p-3 font-semibold ${calc.isCollegiate ? 'text-emerald-600' : 'text-rose-600'}">${s.attendPct}%</td>
+          <td class="p-3 text-slate-600">${calc.attendMarks}</td>
+          <td class="p-3 font-bold text-indigo-700">${calc.total.toFixed(1)}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${calc.isCollegiate ? 'bg-emerald-100 text-emerald-700' : 'bg
+                                                                          <!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Management System - Department of English</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      #printable-area, #printable-area * { visibility: visible; }
+      #printable-area { position: absolute; left: 0; top: 0; width: 100%; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-indigo-900 text-white shadow-lg no-print">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-indigo-700 p-3 rounded-full">
+          <i class="fa-solid fa-graduation-cap text-3xl text-yellow-400"></i>
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold tracking-wide">Sunamganj Govt. College</h1>
+          <p class="text-indigo-200 text-sm"><i class="fa-solid fa-book-open mr-1"></i>Department of English — Honors Management System</p>
+        </div>
+      </div>
+      
+      <!-- Session Selector & Auth Status -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center bg-indigo-800 px-3 py-1.5 rounded-lg border border-indigo-700">
+          <i class="fa-solid fa-calendar-days text-yellow-400 mr-2"></i>
+          <span class="text-xs text-indigo-200 mr-2">Session:</span>
+          <select id="sessionFilter" onchange="filterData()" class="bg-indigo-900 text-white text-sm focus:outline-none cursor-pointer">
+            <option value="2025-2026">2025-2026</option>
+            <option value="2024-2025">2024-2025</option>
+            <option value="2023-2024">2023-2024</option>
+          </select>
+          <button onclick="addNewSession()" class="ml-2 text-yellow-400 hover:text-yellow-300" title="Add New Session">
+            <i class="fa-solid fa-square-plus text-lg"></i>
+          </button>
+        </div>
+
+        <div id="authStatus" class="flex items-center gap-2">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full no-print">
+
+    <!-- Top Action Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+        <div class="p-3 bg-blue-100 text-blue-600 rounded-lg"><i class="fa-solid fa-users text-2xl"></i></div>
+        <div>
+          <p class="text-xs text-slate-500 uppercase font-semibold">Total Students</p>
+          <h3 id="statTotal" class="text-2xl font-bold text-slate-800">0</h3>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+        <div class="p-3 bg-emerald-100 text-emerald-600 rounded-lg"><i class="fa-solid fa-user-check text-2xl"></i></div>
+        <div>
+          <p class="text-xs text-slate-500 uppercase font-semibold">Collegiate (≥60%)</p>
+          <h3 id="statCollegiate" class="text-2xl font-bold text-emerald-600">0</h3>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+        <div class="p-3 bg-rose-100 text-rose-600 rounded-lg"><i class="fa-solid fa-user-xmark text-2xl"></i></div>
+        <div>
+          <p class="text-xs text-slate-500 uppercase font-semibold">Non-Collegiate (&lt;60%)</p>
+          <h3 id="statNonCollegiate" class="text-2xl font-bold text-rose-600">0</h3>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+        <div class="p-3 bg-amber-100 text-amber-600 rounded-lg"><i class="fa-solid fa-signature text-2xl"></i></div>
+        <div>
+          <p class="text-xs text-slate-500 uppercase font-semibold">Teacher's Sign</p>
+          <button onclick="openSignatureModal()" class="text-xs bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-3 rounded mt-1 flex items-center gap-1">
+            <i class="fa-solid fa-pen-nib"></i> Manage Sign
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <!-- Search -->
+      <div class="relative w-full md:w-80">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="searchInput" oninput="filterData()" placeholder="Search Name, Roll, or Reg..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+        <button id="addStudentBtn" onclick="openStudentModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition">
+          <i class="fa-solid fa-user-plus"></i> Add Student
+        </button>
+        <button onclick="triggerCSVImport()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition">
+          <i class="fa-solid fa-file-import"></i> Import CSV
+        </button>
+        <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
+        <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition">
+          <i class="fa-solid fa-file-excel"></i> Export CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Student Data Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+              <th class="p-3"><i class="fa-solid fa-hashtag mr-1"></i> Roll</th>
+              <th class="p-3"><i class="fa-solid fa-id-card mr-1"></i> Reg No</th>
+              <th class="p-3"><i class="fa-solid fa-user mr-1"></i> Name</th>
+              <th class="p-3"><i class="fa-solid fa-pen mr-1"></i> In-course (10)</th>
+              <th class="p-3"><i class="fa-solid fa-file-lines mr-1"></i> Assign (5)</th>
+              <th class="p-3"><i class="fa-solid fa-clipboard-user mr-1"></i> Attend %</th>
+              <th class="p-3"><i class="fa-solid fa-percent mr-1"></i> Attend (5)</th>
+              <th class="p-3"><i class="fa-solid fa-calculator mr-1"></i> Total (20)</th>
+              <th class="p-3"><i class="fa-solid fa-shield-halved mr-1"></i> Status</th>
+              <th class="p-3 text-center"><i class="fa-solid fa-gear mr-1"></i> Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studentTableBody">
+            <!-- Data Rows inserted via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Printable Area for Cards -->
+  <div id="printable-area" class="hidden p-6 bg-white"></div>
+
+  <!-- Student Add/Edit Modal -->
+  <div id="studentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
+      <h3 id="modalTitle" class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-user-pen text-indigo-600"></i> Student Information
+      </h3>
+      <form id="studentForm" onsubmit="saveStudent(event)" class="space-y-3">
+        <input type="hidden" id="studentIndex">
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">Session</label>
+          <input type="text" id="modalSession" readonly class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-100">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">Student Name</label>
+          <input type="text" id="modalName" required class="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">Class Roll</label>
+            <input type="text" id="modalRoll" required class="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">Registration No</label>
+            <input type="text" id="modalReg" required class="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">In-course I (10)</label>
+            <input type="number" step="0.1" min="0" max="10" id="modalInc1" required class="w-full border border-slate-300 rounded p-2 text-sm">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">In-course II (10)</label>
+            <input type="number" step="0.1" min="0" max="10" id="modalInc2" required class="w-full border border-slate-300 rounded p-2 text-sm">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">Assignment (5)</label>
+            <input type="number" step="0.1" min="0" max="5" id="modalAssign" required class="w-full border border-slate-300 rounded p-2 text-sm">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 block mb-1">Attendance %</label>
+            <input type="number" step="0.1" min="0" max="100" id="modalAttendPct" required class="w-full border border-slate-300 rounded p-2 text-sm">
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-200">
+          <button type="button" onclick="closeStudentModal()" class="px-4 py-2 text-sm bg-slate-200 hover:bg-slate-300 rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium">Save Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Signature Modal -->
+  <div id="signatureModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+      <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-signature text-indigo-600"></i> Upload Teacher's Signature
+      </h3>
+      <div class="space-y-4">
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">Upload Signature Image (PNG/JPG)</label>
+          <input type="file" id="signFileInput" accept="image/*" onchange="previewSignature(event)" class="w-full text-sm text-slate-500 border border-slate-300 rounded p-2">
+        </div>
+        <div class="text-center p-3 bg-slate-50 border border-dashed border-slate-300 rounded-lg">
+          <p class="text-xs text-slate-400 mb-2">Signature Preview</p>
+          <img id="signPreview" class="h-16 mx-auto object-contain hidden" alt="Signature">
+          <span id="noSignText" class="text-xs text-slate-400">No signature added yet</span>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-4 border-t border-slate-200 mt-4">
+        <button onclick="clearSignature()" class="px-3 py-1.5 text-xs bg-rose-100 text-rose-600 rounded">Remove</button
