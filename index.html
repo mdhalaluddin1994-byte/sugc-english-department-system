@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>অনার্স ইনকোর্স ও শিক্ষক পোর্টাল</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Hind Siliguri', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+    <!-- Auth Container (Login / Register Screen) -->
+    <div id="authSection" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-indigo-900">অনার্স শিক্ষক ও শিক্ষার্থী পোর্টাল</h1>
+                <p class="text-xs text-slate-500 mt-1">সেশন: ২০২৫-২০২৬ | প্রবেশ করতে লগইন করুন</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ইমেইল ঠিকানা</label>
+                    <input type="email" id="loginEmail" required placeholder="admin@college.edu" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">পাসওয়ার্ড</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-semibold text-sm transition">
+                    লগইন করুন
+                </button>
+            </form>
+
+            <div class="mt-4 text-center border-t pt-4">
+                <p class="text-xs text-slate-500">প্রথমে চালু করতে ডিফল্ট লগইন:</p>
+                <p class="text-xs font-mono text-indigo-700 mt-0.5">Email: admin@college.edu | Pass: admin123</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Section (Hidden until logged in) -->
+    <div id="dashboardSection" class="hidden min-h-screen p-4 md:p-8">
+        <div class="max-w-7xl mx-auto space-y-6">
+            
+            <!-- Navbar & Header -->
+            <div class="bg-white rounded-xl shadow-md p-6 border-l-8 border-indigo-600 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-indigo-900">অনার্স ইনকোর্স ও অ্যাটেনডেন্স ম্যানেজমেন্ট</h1>
+                    <p class="text-xs text-slate-500 mt-1">
+                        লগইন আছেন: <span id="currentUserEmail" class="font-bold text-indigo-700"></span> (<span id="currentUserRole" class="text-emerald-600 font-semibold"></span>)
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="downloadCSVTemplate()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition">
+                        📥 CSV টেমপ্লেট
+                    </button>
+                    <button onclick="exportToCSV()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition">
+                        📊 এক্সপোর্ট
+                    </button>
+                    <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition">
+                        🚪 লগআউট
+                    </button>
+                </div>
+            </div>
+
+            <!-- Teachers Section (Admin Only view/add) -->
+            <div id="teacherManagementBox" class="bg-white p-6 rounded-xl shadow-md space-y-4">
+                <h2 class="font-bold text-lg text-slate-700 border-b pb-2 flex justify-between items-center">
+                    <span>👨‍🏫 কোর্স শিক্ষক যোগ / তালিকা</span>
+                    <span class="text-xs font-normal text-slate-500">(নতুন শিক্ষক যুক্ত করলে তারা পাসওয়ার্ড দিয়ে লগইন করতে পারবেন)</span>
+                </h2>
+                <form id="teacherForm" onsubmit="handleAddTeacher(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div>
+                        <label class="block font-medium mb-1">শিক্ষকের নাম</label>
+                        <input type="text" id="tName" required placeholder="ড. আব্দুর রহিম" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">ইমেইল (লগইন আইডি)</label>
+                        <input type="email" id="tEmail" required placeholder="teacher@college.edu" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">পাসওয়ার্ড</label>
+                        <input type="password" id="tPass" required placeholder="••••••••" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">বিষয় / সাবজেক্ট</label>
+                        <input type="text" id="tSubject" required placeholder="বাংলা / হিসাববিজ্ঞান" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div class="sm:col-span-2 md:col-span-4 flex justify-end">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-md text-xs font-semibold">
+                            শিক্ষক একাউন্ট তৈরি করুন
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Registered Teachers List -->
+                <div class="mt-4 pt-4 border-t">
+                    <h3 class="font-semibold text-sm text-slate-600 mb-2">নিবন্ধিত শিক্ষকদের তালিকা:</h3>
+                    <div id="teacherList" class="flex flex-wrap gap-2 text-xs">
+                        <!-- Teachers rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- CSV Import and Quick Instructions -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3 md:col-span-2">
+                    <h2 class="font-bold text-lg text-slate-700 border-b pb-2">📂 এক্সেলে ফাইল আপলোড (CSV Import)</h2>
+                    <p class="text-xs text-slate-500">কলাম ক্রমানুসার: <code class="bg-slate-100 p-1 rounded border">Roll, Name, Incourse1, Incourse2, Assignment, AttendedClasses, TotalClasses, TeacherEmail</code></p>
+                    <input type="file" id="csvFileInput" accept=".csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                </div>
+
+                <div class="bg-indigo-900 text-white p-5 rounded-xl shadow-md flex flex-col justify-between">
+                    <div>
+                        <h2 class="font-bold text-base border-b border-indigo-700 pb-2">ইনকোর্স রুলস (সেশন ২৫-২৬)</h2>
+                        <ul class="text-xs space-y-1 mt-2 text-indigo-200">
+                            <li>• ১ ও ২ নং ইনকোর্স গড় = ১০ মার্ক</li>
+                            <li>• অ্যাসাইনমেন্ট = ৫ মার্ক</li>
+                            <li>• উপস্থিতি = ৫ মার্ক (৬০%+ হতে হবে)</li>
+                            <li>• সর্বমোট = ২০ মার্ক</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Manual Entry Form -->
+            <div class="bg-white p-6 rounded-xl shadow-md space-y-4">
+                <h2 class="font-bold text-lg text-slate-700 border-b pb-2">➕ শিক্ষার্থী মার্কস এন্ট্রি / সম্পাদনা</h2>
+                <form id="studentForm" onsubmit="handleStudentEntry(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 text-sm">
+                    <div>
+                        <label class="block font-medium mb-1">রোল / ID</label>
+                        <input type="text" id="sRoll" required placeholder="যেমন: ১০১" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">শিক্ষার্থীর নাম</label>
+                        <input type="text" id="sName" required placeholder="নাম লিখুন" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">১ম ইনকোর্স (১০)</label>
+                        <input type="number" id="sInc1" min="0" max="10" step="0.5" required placeholder="0-10" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">২য় ইনকোর্স (১০)</label>
+                        <input type="number" id="sInc2" min="0" max="10" step="0.5" required placeholder="0-10" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">অ্যাসাইনমেন্ট (৫)</label>
+                        <input type="number" id="sAssign" min="0" max="5" step="0.5" required placeholder="0-5" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">উপস্থিতি ক্লাসের সংখ্যা</label>
+                        <input type="number" id="sAtt" min="0" required placeholder="উপস্থিতি" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">মোট ক্লাসের সংখ্যা</label>
+                        <input type="number" id="sTotal" min="1" required placeholder="মোট ক্লাস" class="w-full p-2 border rounded-md outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">দায়িত্বপ্রাপ্ত শিক্ষক</label>
+                        <select id="sTeacher" class="w-full p-2 border rounded-md outline-none text-xs">
+                            <!-- Teachers loaded dynamically -->
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2 md:col-span-4 lg:col-span-8 flex justify-end">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-semibold text-xs transition">
+                            তথ্য সংরক্ষণ করুন
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Student Data Table -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="p-4 border-b flex flex-col md:flex-row justify-between items-center gap-3 bg-slate-50">
+                    <h2 class="font-bold text-lg text-slate-700">📋 শিক্ষার্থী তালিকা ও রেজাল্ট</h2>
+                    <div class="flex items-center gap-2 w-full md:w-auto">
+                        <input type="text" id="searchInput" oninput="renderTable()" placeholder="রোল বা নাম দিয়ে খুঁজুন..." class="p-2 border rounded-md text-sm w-full md:w-64 outline-none">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead class="bg-indigo-50 text-indigo-900 border-b">
+                            <tr>
+                                <th class="p-3 border-r">রোল</th>
+                                <th class="p-3 border-r">শিক্ষার্থীর নাম</th>
+                                <th class="p-3 border-r text-center">১ম ইনকোর্স (১০)</th>
+                                <th class="p-3 border-r text-center">২য় ইনকোর্স (১০)</th>
+                                <th class="p-3 border-r text-center">গড় ইনকোর্স (১০)</th>
+                                <th class="p-3 border-r text-center">অ্যাসাইনমেন্ট (৫)</th>
+                                <th class="p-3 border-r text-center">উপস্থিতি (ক্লাস / %)</th>
+                                <th class="p-3 border-r text-center">উপস্থিতি মার্ক (৫)</th>
+                                <th class="p-3 border-r text-center font-bold">সর্বমোট (২০)</th>
+                                <th class="p-3 border-r text-center">স্ট্যাটাস</th>
+                                <th class="p-3 border-r text-center">শিক্ষক</th>
+                                <th class="p-3 text-center">অ্যাকশন</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTableBody">
+                            <!-- Rows rendered dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="emptyMessage" class="text-center py-8 text-slate-400 hidden">
+                    কোনো শিক্ষার্থী পাওয়া যায়নি।
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Data Structures
+        let users = JSON.parse(localStorage.getItem('honors_users')) || [
+            { email: 'admin@college.edu', pass: 'admin123', name: 'প্রধান অ্যাডমিন', subject: 'All', role: 'admin' }
+        ];
+        let students = JSON.parse(localStorage.getItem('honors_students')) || [];
+        let currentUser = JSON.parse(sessionStorage.getItem('honors_current_user')) || null;
+
+        // Initialize App State
+        window.onload = function() {
+            if (currentUser) {
+                showDashboard();
+            } else {
+                showAuth();
+            }
+        };
+
+        function saveData() {
+            localStorage.setItem('honors_users', JSON.stringify(users));
+            localStorage.setItem('honors_students', JSON.stringify(students));
+            renderTable();
+            renderTeacherList();
+            populateTeacherDropdown();
+        }
+
+        // View Toggles
+        function showAuth() {
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            document.getElementById('currentUserEmail').innerText = currentUser.email;
+            document.getElementById('currentUserRole').innerText = currentUser.role === 'admin' ? 'অ্যাডমিন' : `শিক্ষক (${currentUser.subject})`;
+
+            renderTeacherList();
+            populateTeacherDropdown();
+            renderTable();
+        }
+
+        // Authentication Handlers
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPassword').value.trim();
+
+            const user = users.find(u => u.email === email && u.pass === pass);
+            if (user) {
+                currentUser = user;
+                sessionStorage.setItem('honors_current_user', JSON.stringify(currentUser));
+                showDashboard();
+            } else {
+                alert('ভুল ইমেইল অথবা পাসওয়ার্ড দিয়েছেন!');
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('honors_current_user');
+            currentUser = null;
+            showAuth();
+        }
+
+        // Teacher Addition
+        function handleAddTeacher(e) {
+            e.preventDefault();
+            if (currentUser.role !== 'admin') {
+                alert('শুধুমাত্র অ্যাডমিন নতুন শিক্ষক যোগ করতে পারবেন!');
+                return;
+            }
+
+            const name = document.getElementById('tName').value.trim();
+            const email = document.getElementById('tEmail').value.trim();
+            const pass = document.getElementById('tPass').value.trim();
+            const subject = document.getElementById('tSubject').value.trim();
+
+            if (users.find(u => u.email === email)) {
+                alert('এই ইমেইলে ইতোমধ্যেই একজন শিক্ষক নিবন্ধিত আছেন!');
+                return;
+            }
+
+            users.push({ name, email, pass, subject, role: 'teacher' });
+            saveData();
+            document.getElementById('teacherForm').reset();
+            alert('নতুন শিক্ষক সফলভাবে যুক্ত হয়েছেন!');
+        }
+
+        function renderTeacherList() {
+            const container = document.getElementById('teacherList');
+            container.innerHTML = '';
+            const teachers = users.filter(u => u.role === 'teacher');
+
+            if (teachers.length === 0) {
+                container.innerHTML = `<span class="text-slate-400">কোনো আলাদা শিক্ষক রেজিস্টার করা নেই (ডিফল্ট অ্যাডমিন সক্রিয়)।</span>`;
+                return;
+            }
+
+            teachers.forEach(t => {
+                const badge = document.createElement('span');
+                badge.className = 'bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-full font-medium';
+                badge.innerText = `${t.name} (${t.subject}) - ${t.email}`;
+                container.appendChild(badge);
+            });
+        }
+
+        function populateTeacherDropdown() {
+            const dropdown = document.getElementById('sTeacher');
+            dropdown.innerHTML = '<option value="admin@college.edu">সাধারণ / অ্যাডমিন</option>';
+
+            users.filter(u => u.role === 'teacher').forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.email;
+                opt.innerText = `${t.name} (${t.subject})`;
+                dropdown.appendChild(opt);
+            });
+        }
+
+        // Attendance Grade Calculation
+        function getAttendanceMark(percentage) {
+            if (percentage < 60) return 0;
+            if (percentage >= 90) return 5;
+            if (percentage >= 80) return 4;
+            if (percentage >= 70) return 3;
+            if (percentage >= 60) return 2;
+            return 0;
+        }
+
+        // Student Data Entry
+        function handleStudentEntry(e) {
+            e.preventDefault();
+            const roll = document.getElementById('sRoll').value.trim();
+            const name = document.getElementById('sName').value.trim();
+            const inc1 = parseFloat(document.getElementById('sInc1').value);
+            const inc2 = parseFloat(document.getElementById('sInc2').value);
+            const assign = parseFloat(document.getElementById('sAssign').value);
+            const attClasses = parseInt(document.getElementById('sAtt').value);
+            const totalClasses = parseInt(document.getElementById('sTotal').value);
+            const teacherEmail = document.getElementById('sTeacher').value;
+
+            const existingIndex = students.findIndex(s => s.roll === roll);
+            const studentObj = { roll, name, inc1, inc2, assign, attClasses, totalClasses, teacherEmail };
+
+            if (existingIndex > -1) {
+                students[existingIndex] = studentObj;
+            } else {
+                students.push(studentObj);
+            }
+
+            saveData();
+            document.getElementById('studentForm').reset();
+        }
+
+        function deleteStudent(roll) {
+            if (confirm(`আপনি কি নিশ্চিত যে রোল ${roll} মুছে ফেলতে চান?`)) {
+                students = students.filter(s => s.roll !== roll);
+                saveData();
+            }
+        }
+
+        // Render Student Table
+        function renderTable() {
+            const tbody = document.getElementById('studentTableBody');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            const filtered = students.filter(s => 
+                (s.roll.toLowerCase().includes(search) || s.name.toLowerCase().includes(search))
+            );
+
+            if (filtered.length === 0) {
+                document.getElementById('emptyMessage').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('emptyMessage').classList.add('hidden');
+            }
+
+            filtered.forEach(s => {
+                const avgIncourse = ((s.inc1 + s.inc2) / 2);
+                const attPercent = s.totalClasses > 0 ? ((s.attClasses / s.totalClasses) * 100) : 0;
+                const attMark = getAttendanceMark(attPercent);
+                const grandTotal = avgIncourse + s.assign + attMark;
+                const isShortage = attPercent < 60;
+                
+                const assignedTeacher = users.find(u => u.email === s.teacherEmail);
+                const teacherLabel = assignedTeacher ? assignedTeacher.name : 'অ্যাসাইনড নয়';
+
+                const tr = document.createElement('tr');
+                tr.className = `border-b hover:bg-slate-50 transition ${isShortage ? 'bg-red-50/50' : ''}`;
+
+                tr.innerHTML = `
+                    <td class="p-3 border-r font-semibold">${s.roll}</td>
+                    <td class="p-3 border-r font-medium">${s.name}</td>
+                    <td class="p-3 border-r text-center">${s.inc1}</td>
+                    <td class="p-3 border-r text-center">${s.inc2}</td>
+                    <td class="p-3 border-r text-center bg-slate-50 font-medium">${avgIncourse.toFixed(1)}</td>
+                    <td class="p-3 border-r text-center">${s.assign}</td>
+                    <td class="p-3 border-r text-center">
+                        ${s.attClasses}/${s.totalClasses} 
+                        <span class="text-xs block ${isShortage ? 'text-red-600 font-bold' : 'text-slate-500'}">
+                            (${attPercent.toFixed(1)}%)
+                        </span>
+                    </td>
+                    <td class="p-3 border-r text-center">${attMark}</td>
+                    <td class="p-3 border-r text-center font-bold text-indigo-700 text-base">${grandTotal.toFixed(1)}</td>
+                    <td class="p-3 border-r text-center">
+                        ${isShortage 
+                            ? `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">Non-Collegiate</span>`
+                            : `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Regular</span>`
+                        }
+                    </td>
+                    <td class="p-3 border-r text-center text-xs font-medium text-slate-600">${teacherLabel}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deleteStudent('${s.roll}')" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1 border border-red-200 rounded hover:bg-red-50">
+                            Delete
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // CSV File Import Handler
+        document.getElementById('csvFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const text = evt.target.result;
+                const lines = text.split('\n');
+                
+                let addedCount = 0;
+                lines.forEach((line, index) => {
+                    if (index === 0 || !line.trim()) return;
+                    const cols = line.split(',').map(c => c.trim().replace(/"/g, ''));
+                    
+                    if (cols.length >= 7) {
+                        const roll = cols[0];
+                        const name = cols[1];
+                        const inc1 = parseFloat(cols[2]) || 0;
+                        const inc2 = parseFloat(cols[3]) || 0;
+                        const assign = parseFloat(cols[4]) || 0;
+                        const attClasses = parseInt(cols[5]) || 0;
+                        const totalClasses = parseInt(cols[6]) || 1;
+                        const teacherEmail = cols[7] || 'admin@college.edu';
+
+                        const existingIndex = students.findIndex(s => s.roll === roll);
+                        const studentObj = { roll, name, inc1, inc2, assign, attClasses, totalClasses, teacherEmail };
+
+                        if (existingIndex > -1) {
+                            students[existingIndex] = studentObj;
+                        } else {
+                            students.push(studentObj);
+                        }
+                        addedCount++;
+                    }
+                });
+
+                saveData();
+                alert(`${addedCount} জন শিক্ষার্থীর ডাটা ইম্পোর্ট করা হয়েছে!`);
+                e.target.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        // Export Data to CSV
+        function exportToCSV() {
+            if (students.length === 0) {
+                alert('রপ্তানি করার মতো কোনো তথ্য নেই!');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Roll,Name,Incourse1,Incourse2,IncourseAverage,Assignment,AttendedClasses,TotalClasses,AttendancePercent,AttendanceMark,GrandTotal,Status,TeacherEmail\n";
+
+            students.forEach(s => {
+                const avgIncourse = ((s.inc1 + s.inc2) / 2);
+                const attPercent = s.totalClasses > 0 ? ((s.attClasses / s.totalClasses) * 100) : 0;
+                const attMark = getAttendanceMark(attPercent);
+                const grandTotal = avgIncourse + s.assign + attMark;
+                const status = attPercent < 60 ? 'Non-Collegiate' : 'Regular';
+
+                csvContent += `"${s.roll}","${s.name}",${s.inc1},${s.inc2},${avgIncourse.toFixed(1)},${s.assign},${s.attClasses},${s.totalClasses},${attPercent.toFixed(1)}%,${attMark},${grandTotal.toFixed(1)},"${status}","${s.teacherEmail || ''}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Honors_Incourse_Marks_Export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // CSV Template Download
+        function downloadCSVTemplate() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Roll,Name,Incourse1,Incourse2,Assignment,AttendedClasses,TotalClasses,TeacherEmail\n";
+            csvContent += "101,Karim Ahmed,8,9,4.5,25,30,admin@college.edu\n";
+            csvContent += "102,Rahim Mia,7,6,4,15,30,admin@college.edu\n";
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Honors_Marks_Template.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
